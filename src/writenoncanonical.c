@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 {
     int fd,c, res;
     struct termios oldtio,newtio;
-    char buf[255];
+    char buf[255], str[255];
     int i, sum = 0, speed = 0;
 
     if ( (argc < 2) ||
@@ -74,13 +74,17 @@ int main(int argc, char** argv)
 
 
 
-    for (i = 0; i < 255; i++) {
-        buf[i] = getchar();
-    }
+   /*for (i = 0; i < 255; i++) {
+        buf = gets();
+    }*/
 
+
+    gets(str);
+    strcpy(buf,str);
+    
     /*testing*/
-    buf[25] = '\n';
-
+    buf[strlen(str)] = '\0';
+    
     res = write(fd,buf,255);
     printf("%d bytes written\n", res);
 
