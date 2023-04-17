@@ -52,7 +52,7 @@ int main(int argc, char** argv)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
 
 
 
@@ -63,6 +63,8 @@ int main(int argc, char** argv)
 
 
     tcflush(fd, TCIOFLUSH);
+    
+    sleep(1);  //added
 
     if (tcsetattr(fd,TCSANOW,&newtio) == -1) {
         perror("tcsetattr");
@@ -74,7 +76,7 @@ int main(int argc, char** argv)
 
 
     for (i = 0; i < 255; i++) {
-        buf[i] = 'a';
+        buf[i] = getchar();
     }
 
     /*testing*/
@@ -89,7 +91,7 @@ int main(int argc, char** argv)
     o indicado no guião
     */
 
-    sleep(1);
+    
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
