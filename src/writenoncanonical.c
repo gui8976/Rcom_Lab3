@@ -64,7 +64,6 @@ int main(int argc, char** argv)
 
     tcflush(fd, TCIOFLUSH);
     
-    sleep(1);  //added
 
     if (tcsetattr(fd,TCSANOW,&newtio) == -1) {
         perror("tcsetattr");
@@ -91,6 +90,7 @@ int main(int argc, char** argv)
     o indicado no guião
     */
 
+    sleep(1);  //added
     
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
         perror("tcsetattr");
