@@ -68,8 +68,9 @@ int main(int argc, char** argv)
 
     while (STOP==FALSE) {       /* loop for input */
         res = read(fd,buf,255);   /* returns after 5 chars have been input */
-        buf[res]=0;               /* so we can printf... */
         printf(":%s:%d\n", buf, res);
+        res = write(fd,buf,255);
+        printf("%d bytes written\n", res);
         if (buf[0]=='z') STOP=TRUE;
     }
     res = write(fd,buf,255);
