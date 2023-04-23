@@ -72,9 +72,8 @@ int main(int argc, char** argv)
         printf(":%s:%d\n", buf, res);
         if (buf[0]=='z') STOP=TRUE;
     }
-
-
-
+    res = write(fd,buf,255);
+    printf("%d bytes written\n", res);
     /*
     O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião
     */
