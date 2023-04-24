@@ -15,9 +15,9 @@ volatile int STOP=FALSE;
 
 int main(int argc, char** argv)
 {
-    int fd,c, res;
+    int fd,c, res, i=0 ;
     struct termios oldtio,newtio;
-    char buf[255];
+    char buf[255], str[255];
 
     if ( (argc < 2) ||
          ((strcmp("/dev/ttyS0", argv[1])!=0) &&
@@ -67,14 +67,13 @@ int main(int argc, char** argv)
     printf("New termios structure set\n");
 
     while (STOP==FALSE) {       /* loop for input */
-        res = read(fd,buf,255);   /* returns after 5 chars have been input */
-        printf(":%s:%d\n", buf, res);
-        res = write(fd,buf,255);
-        printf("%d bytes written\n", res);
+        res = read(fd,buf,1);   /* returns after 5 chars have been input */
+        str[i] = buf[0];
+        i++;
         if (buf[0]=='z') STOP=TRUE;
     }
-    res = write(fd,buf,255);
-    printf("%d bytes written\n", res);
+    printf("writing Back: %s",str);
+    write(fd,str,255);
     /*
     O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião
     */
