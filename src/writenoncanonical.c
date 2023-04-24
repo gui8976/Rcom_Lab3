@@ -84,8 +84,7 @@ int main(int argc, char** argv)
     
     /*testing*/
     buf[strlen(str)] = '\0';
-    
-    res = write(fd,buf,255);
+    res = write(fd,buf,strlen(buf)+1);
     printf("%d bytes written\n", res);
 
 
