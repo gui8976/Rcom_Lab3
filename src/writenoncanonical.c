@@ -14,11 +14,107 @@
 
 volatile int STOP=FALSE;
 
+
+typedef enum
+{
+    START,
+    FLAG_RCV,
+    A_RCV,
+    C_RCV,
+    BCC_OK,
+    STOP_a,
+} message_state;
+
+message_state state = START;
+
+void state_handler(unsigned char c)
+{
+    char buf[3];
+    switch (state)
+    {
+
+    case START:
+        if (c == '0x5C')
+            state = FLAG_RCV;
+        else
+        {
+            state = START;
+            break;
+        }
+    case FLAG_RCV:
+        if (c == '0x01' || c == '0x03')
+        {
+            state = A_RCV;
+            buf[0] = c;
+            break;
+        }
+        else if (c == '0x5C')
+        {
+            state = FLAG_RCV;
+            break;
+        }
+        else
+        {
+            state = START;
+            break;
+        }
+    case A_RCV:
+        if (c == '0x07')
+        {
+            buf[1] = c;
+            state = C_RCV;
+            break;
+        }
+        else if (c == '0x5C')
+        {
+            state = FLAG_RCV;
+            break;
+        }
+        else
+        {
+            state = START;
+            break;
+        }
+
+    case C_RCV:
+        if (buf[0] ^ buf[1])
+        {
+            state = BCC_OK;
+            break;
+        }
+        else if (c == '0x5C')
+        {
+            state = FLAG_RCV;
+            break;
+        }
+        else
+        {
+            state = START;
+            break;
+        }
+
+    case BCC_OK:
+        if (c == '0x5C')
+        {
+            state = STOP_a;
+            break;
+        }
+        else
+        {
+            state = START;
+            break;
+        }
+
+    case STOP_a:
+        break;
+    }
+}
+
 int main(int argc, char** argv)
 {
     int fd,c, res;
     struct termios oldtio,newtio;
-    char buf[255], str[255];
+    //char buf[255], str[255];
     int i, sum = 0, speed = 0;
 
     if ( (argc < 2) ||
@@ -79,13 +175,14 @@ int main(int argc, char** argv)
     }*/
 
 
-    gets(str);
-    strcpy(buf,str);
+    //gets(str);
+    //strcpy(buf,str);
     
     /*testing*/
-    buf[strlen(str)] = '\0';
+    //buf[strlen(str)] = '\0';
+    char buf[]= {'0x5C', '0x01', '0x03', 1, '0x5C' };
+    buf[3]=buf[1]^buf[2];
     res = write(fd,buf,strlen(buf)+1);
-    printf("%d bytes written\n", res);
 
 
     /*
@@ -94,12 +191,15 @@ int main(int argc, char** argv)
     */
     
     while (STOP==FALSE) {       /* loop for input */
-        res = read(fd,buf,255);   /* returns after 5 chars have been input */
-        buf[res]=0;               /* so we can printf... */
-        printf(":%s:%d\n", buf, res);
-        if (buf[0]=='z') STOP=TRUE;
+             
+        res = read(fd, buf, 1); /* returns after 5 chars have been input */
+        state_handler(buf[0]);
+        if (state != STOP_a)
+        {
+            printf("UA state achieved!\n");
+            break;
+        }
     }
-
     sleep(1);  //added
     
     if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
@@ -111,3 +211,4 @@ int main(int argc, char** argv)
     close(fd);
     return 0;
 }
+
