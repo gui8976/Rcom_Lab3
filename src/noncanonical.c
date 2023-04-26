@@ -13,6 +13,44 @@
 
 volatile int STOP=FALSE;
 
+typedef enum {
+    START,
+    FLAG_RCV,
+    A_RCV,
+    C_RCV,
+    BCC_OK,
+    STOP,
+} message_state;
+
+message_state state = START;
+
+void 
+switch (state) {
+    case START:
+    if(str[0] = "0x5C")
+        state = FLAG_RCV;
+    else state = START;
+    case FLAG_RCV:
+    if(str[0] = "0x01" || str[0] = "0x03)
+        state = FLAG_RCV;
+    else state = START;
+    //0x03
+    //0x01    
+    case A_RCV:
+    if(str[0] = "0x03")
+        state = FLAG_RCV;
+    else state = START;
+    //0x03
+    case C_RCV:
+    //xor do A e C;
+    case BCC_OK:
+    //flag
+    case STOP:
+
+}
+
+
+
 int main(int argc, char** argv)
 {
     int fd,c, res, i=0 ;
