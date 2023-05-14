@@ -119,11 +119,15 @@ int fd;
 
 void atende()
 {
-    int res;
+    int res,cont = 0;
     char buf[]= {0x5C, 0x01, 0x03, 1, 0x5C };
     buf[3]=buf[1]^buf[2];
     res = write(fd,buf,strlen(buf)+1);
+    cont++;
+    if(cont == 4)
+        exit(1);
     alarm(3);
+    
     
 }
 int main(int argc, char** argv)
