@@ -5,6 +5,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #define BAUDRATE B38400
 #define _POSIX_SOURCE 1 /* POSIX compliant source */
@@ -32,7 +35,7 @@ void state_handler(unsigned char c)
     {
 
     case START:
-        if (c == '0x5C')
+        if (c == 0x5C)
             state = FLAG_RCV;
         else
         {
@@ -40,30 +43,30 @@ void state_handler(unsigned char c)
             break;
         }
     case FLAG_RCV:
-        if (c == '0x01' || c == '0x03')
+        if (c == 0x01 || c == 0x03)
         {
             state = A_RCV;
             buf[0] = c;
             break;
         }
-        else if (c == '0x5C')
+        else if (c == 0x5C)
         {
             state = FLAG_RCV;
             break;
         }
         else
-        {
+        {         
             state = START;
             break;
         }
     case A_RCV:
-        if (c == '0x03')
+        if (c == 0x03)
         {
             buf[1] = c;
             state = C_RCV;
             break;
         }
-        else if (c == '0x5C')
+        else if (c == 0x5C)
         {
             state = FLAG_RCV;
             break;
@@ -80,7 +83,7 @@ void state_handler(unsigned char c)
             state = BCC_OK;
             break;
         }
-        else if (c == '0x5C')
+        else if (c == 0x5C)
         {
             state = FLAG_RCV;
             break;
@@ -92,7 +95,7 @@ void state_handler(unsigned char c)
         }
 
     case BCC_OK:
-        if (c == '0x5C')
+        if (c == 0x5C)
         {
             state = STOP_a;
             break;
@@ -112,11 +115,11 @@ int main(int argc, char **argv)
 {
     int fd, c, res, i = 0;
     struct termios oldtio, newtio;
-    char buf[255];
+    char buff[255];
 
     if ((argc < 2) ||
-        ((strcmp("/dev/ttyS0", argv[1]) != 0) &&
-         (strcmp("/dev/ttyS1", argv[1]) != 0)))
+        ((strcmp("/dev/ttyS10", argv[1]) != 0) &&
+         (strcmp("/dev/ttyS11", argv[1]) != 0)))
     {
         printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
         exit(1);
@@ -164,28 +167,23 @@ int main(int argc, char **argv)
     }
 
     printf("New termios structure set\n");
-
+    printf("New termios structure set\n");
     while (STOP == FALSE)
     {                           /* loop for input */
-        res = read(fd, buf, 1); /* returns after 5 chars have been input */
-        state_handler(buf[0]);
-        if (state != STOP_a)
+        res = read(fd, buff, 1); /* returns after 5 chars have been input */
+        state_handler(buff[0]);
+        if (state == STOP_a)
         {
             printf("Set state achieved!\n");
-            char str[] = {'0x5C', '0x03', '0x07', '0x06', '0x5C'};
+            char str[] = {0x5C, 0x03, 0x07, 0x06, 0x5C};
             str[3] = str[1]^str[2];
             write(fd, str, 255);
             break;
         }
     }
     // printf("writing Back: %s", str);
-    /*
-    O ciclo WHILE deve ser alterado de modo a respeitar o indicado no guião
-    */
-
     sleep(1);
     tcsetattr(fd, TCSANOW, &oldtio);
     close(fd);
     return 0;
 }
-
