@@ -116,16 +116,19 @@ void state_handler(unsigned char c)
 
 
 int fd;
+int cont=0;
 
 void atende()
 {
-    int res,cont = 0;
+    int res;
     char buf[]= {0x5C, 0x01, 0x03, 1, 0x5C };
     buf[3]=buf[1]^buf[2];
     res = write(fd,buf,strlen(buf)+1);
     cont++;
-    if(cont == 4)
+    if(cont == 3){
+        printf("MAXIMUM TIME REACHED: ACTION TERMINATED\n");
         exit(1);
+    }
     alarm(3);
     
     
@@ -211,6 +214,7 @@ int main(int argc, char** argv)
         if (state == STOP_a)
         {
             printf("UA state achieved!\n");
+            alarm(0);
             break;
         }
     }
