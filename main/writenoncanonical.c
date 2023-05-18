@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
     while (alarm_count < 3) {
         alarm_flag = false;
         alarm(3);
-        write(fd, buf, strlen(buf) + 1);      
+        write(fd, buf, strlen(buf) + 1);
         while (true) {
             read(fd, &str, sizeof(str));
             state_handler(str);
@@ -168,7 +168,6 @@ int main(int argc, char** argv) {
             break;
         printf("timeout in %d\n", alarm_count);
     }
-
 
     sleep(1);
 
