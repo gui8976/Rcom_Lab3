@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 
 #define BAUDRATE B38400
@@ -132,9 +133,7 @@ int Set_machine(message_state state,int fd){
 
     if(state == STOP_a){ 
             printf("Set state achieved!\n");
-            //char str[] = {0x5C, 0x03, 0x07, 0x06, 0x5C};
-            //str[3] = str[1]^str[2];
-            //write(fd, str, 255);
+            char str[] = {0x5C, 0x03, 0x07, 0x06, 0x5C};
     }
     return 0;
 }
@@ -144,9 +143,7 @@ int main(int argc, char **argv)
     struct termios oldtio, newtio;
     char buff;
 
-    if ((argc < 2) ||
-        ((strcmp("/dev/ttyS10", argv[1]) != 0) &&
-         (strcmp("/dev/ttyS11", argv[1]) != 0)))
+    if (argc < 2)
     {
         printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
         exit(1);
@@ -177,8 +174,8 @@ int main(int argc, char **argv)
 
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
-    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 1;  
+    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 0;  
 
 
     tcflush(fd, TCIOFLUSH);
@@ -192,7 +189,7 @@ int main(int argc, char **argv)
     printf("New termios structure set\n");
     while (STOP == FALSE)
     {     
-        read(fd, &buff, strlen(buff)); 
+        read(fd, &buff, sizeof(buff)); 
         state_handler(buff);
         if (Set_machine)
             break;

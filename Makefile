@@ -19,24 +19,26 @@ SERIAL2 = /dev/ttyS11
 
 all: $(BIN)/receiver.$(BUILDEXTENS) $(BIN)/transmitter.$(BUILDEXTENS)
 
-$(BIN)/receiver.$(BUILDEXTENS): $(RECEIVER) $(SRC)/*.c
-    $(CC) $(CFLAGS) -o $@ $^ -I$(INCLUDE) -lrt
+$(BIN)/receiver.$(BUILDEXTENS): $(RECEIVER) #$(SRC)/*.c
+	$(CC) $(CFLAGS) -o $@ $^ -I$(INCLUDE) -lrt
+#	$(CC) $(CFLAGS) -o $@ $^ 
 
-$(BIN)/transmitter.$(BUILDEXTENS): $(TRANSMITTER) $(SRC)/*.c
-    $(CC) $(CFLAGS) -o $@ $^ -I$(INCLUDE) -lrt
+$(BIN)/transmitter.$(BUILDEXTENS): $(TRANSMITTER) #$(SRC)/*.c
+	$(CC) $(CFLAGS) -o $@ $^ -I$(INCLUDE) -lrt
+#	$(CC) $(CFLAGS) -o $@ $^ 
 
 .PHONY: clean
 clean:
-    rm -f $(BIN)/*
+	rm -f $(BIN)/*
 
 .PHONY: socat
 socat: 
-    sudo socat -d -d PTY,link=/dev/ttyS10,mode=777 PTY,link=/dev/ttyS11,mode=777
+	sudo socat -d -d PTY,link=/dev/ttyS10,mode=777 PTY,link=/dev/ttyS11,mode=777
 
 .PHONY: runt
 runt:
-    ./$(BIN)/transmitter.$(BUILDEXTENS) $(SERIAL1)
+	./$(BIN)/transmitter.$(BUILDEXTENS) $(SERIAL1)
 
 .PHONY: runr
 runr:
-    ./$(BIN)/receiver.$(BUILDEXTENS) $(SERIAL2)
+	./$(BIN)/receiver.$(BUILDEXTENS) $(SERIAL2)
