@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 {
     int fd,c, res;
     struct termios oldtio,newtio;
-    //char buf[255], str[255];
+    char buf[255], str[255];
     (void) signal(SIGALRM, atende);
 
     if ( (argc < 2) ||
