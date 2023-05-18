@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -Wall -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -g 
+CFLAGS = -Wall -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -g
 
 SRC = src
 LIB = lib
