@@ -326,8 +326,8 @@ int llopen(linkLayer connectionParameters) {
 
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
-    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
-    newtio.c_cc[VMIN] = 0;
+    newtio.c_cc[VTIME] = 0; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 1;
 
     tcflush(fd, TCIOFLUSH);
 
@@ -503,7 +503,6 @@ int llclose(linkLayer connectionParameters, int showStatistics) {
 
         int bytes_read = 0;
         write(fd, disc, sizeof(disc));
-        alarm(connectionParameters.timeOut);
 
         bytes_read = read(fd, &str, sizeof str);
 
@@ -511,7 +510,6 @@ int llclose(linkLayer connectionParameters, int showStatistics) {
             state_handler_DC(str);
 
         if (state == STOP_a)
-            alarm(0);
 
         write(fd, UA, sizeof(UA));
 
@@ -539,15 +537,11 @@ int llclose(linkLayer connectionParameters, int showStatistics) {
             state_handler_DC(str);
 
         write(fd, disc, sizeof(disc));
-        alarm(connectionParameters.timeOut);
 
         bytes_read = read(fd, &str, sizeof str);
 
         while (bytes_read)
             state_handler_UA(str);
-
-        if (state == STOP_a)
-            alarm(0);
 
         printf("\n\n ------ TERMINATING------\n\n");
 
