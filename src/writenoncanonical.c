@@ -1,26 +1,21 @@
 /*Non-Canonical Input Processing*/
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <termios.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <signal.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <termios.h>
+#include <unistd.h>
 
-#define BAUDRATE B38400
-#define MODEMDEVICE "/dev/ttyS1"
-#define _POSIX_SOURCE 1 /* POSIX compliant source */
-#define FALSE 0
-#define TRUE 1
+#include "variaveis.h"
 
-volatile int STOP=FALSE;
-
-
-typedef enum
-{
+int alarm_count = 0;
+bool alarm_flag = false;
+typedef enum {
     START,
     FLAG_RCV,
     A_RCV,
@@ -31,134 +26,97 @@ typedef enum
 
 message_state state = START;
 
-void state_handler(unsigned char c)
-{
+void state_handler(unsigned char c) {
     char buf[3];
-    switch (state)
-    {
+    switch (state) {
+        case START:
+            if (c == F)
+                state = FLAG_RCV;
+            else {
+                state = START;
+                break;
+            }
+        case FLAG_RCV:
+            if (c == A1 || c == A2) {
+                state = A_RCV;
+                buf[0] = c;
+                break;
+            } else if (c == F) {
+                state = FLAG_RCV;
+                break;
+            } else {
+                state = START;
+                break;
+            }
+        case A_RCV:
+            if (c == C_UA) {
+                buf[1] = c;
+                state = C_RCV;
+                break;
+            } else if (c == F) {
+                state = FLAG_RCV;
+                break;
+            } else {
+                state = START;
+                break;
+            }
 
-    case START:
-        if (c == 0x5C)
-            state = FLAG_RCV;
-        else
-        {
-            state = START;
-            break;
-        }
-    case FLAG_RCV:
-        if (c == 0x01 || c == 0x03)
-        {
-            state = A_RCV;
-            buf[0] = c;
-            break;
-        }
-        else if (c == 0x5C)
-        {
-            state = FLAG_RCV;
-            break;
-        }
-        else
-        {          
-            state = START;
-            break;
-        }
-    case A_RCV:
-        if (c == 0x07)
-        {
-            buf[1] = c;
-            state = C_RCV;
-            break;
-        }
-        else if (c == 0x5C)
-        {
-            state = FLAG_RCV;
-            break;
-        }
-        else
-        {
-            state = START;
-            break;
-        }
+        case C_RCV:
+            if (buf[0] ^ buf[1]) {
+                state = BCC_OK;
+                break;
+            } else if (c == F) {
+                state = FLAG_RCV;
+                break;
+            } else {
+                state = START;
+                break;
+            }
 
-    case C_RCV:
-        if (buf[0] ^ buf[1])
-        {
-            state = BCC_OK;
-            break;
-        }
-        else if (c == 0x5C)
-        {
-            state = FLAG_RCV;
-            break;
-        }
-        else
-        {
-            state = START;
-            break;
-        }
+        case BCC_OK:
+            if (c == F) {
+                state = STOP_a;
+                break;
+            } else {
+                state = START;
+                break;
+            }
 
-    case BCC_OK:
-        if (c == 0x5C)
-        {
-            state = STOP_a;
+        case STOP_a:
             break;
-        }
-        else
-        {
-            state = START;
-            break;
-        }
-
-    case STOP_a:
-        break;
     }
 }
 
-
-int fd;
-int cont=0;
-
-void atende()
-{
-    int res;
-    char buf[]= {0x5C, 0x01, 0x03, 1, 0x5C };
-    buf[3]=buf[1]^buf[2];
-    res = write(fd,buf,strlen(buf)+1);
-    cont++;
-    if(cont == 3){
-        printf("MAXIMUM TIME REACHED: ACTION TERMINATED\n");
-        exit(1);
-    }
-    alarm(3);
-    
-    
+void atende() {
+    alarm_count++;
+    alarm_flag = true;
+    printf("alarme\n");
 }
-int main(int argc, char** argv)
-{
-    int fd,c, res;
-    struct termios oldtio,newtio;
-    //char buf[255], str[255];
-    int i, sum = 0, speed = 0;
-    (void) signal(SIGALRM, atende);
+int main(int argc, char** argv) {
+    int c, fd;
+    char str;
+    struct termios oldtio, newtio;
 
-    if ( (argc < 2) ||
-         ((strcmp("/dev/ttyS10", argv[1])!=0) &&
-          (strcmp("/dev/ttyS11", argv[1])!=0) )) {
+    (void)signal(SIGALRM, atende);
+
+    if (argc < 2) {
         printf("Usage:\tnserial SerialPort\n\tex: nserial /dev/ttyS1\n");
         exit(1);
     }
-
 
     /*
     Open serial port device for reading and writing and not as controlling tty
     because we don't want to get killed if linenoise sends CTRL-C.
     */
 
+    fd = open(argv[1], O_RDWR | O_NOCTTY);
 
-    fd = open(argv[1], O_RDWR | O_NOCTTY );
-    if (fd < 0) { perror(argv[1]); exit(-1); }
+    if (fd < 0) {
+        perror(argv[1]);
+        exit(-1);
+    }
 
-    if ( tcgetattr(fd,&oldtio) == -1) { /* save current port settings */
+    if (tcgetattr(fd, &oldtio) == -1) { /* save current port settings */
         perror("tcgetattr");
         exit(-1);
     }
@@ -171,57 +129,49 @@ int main(int argc, char** argv)
     /* set input mode (non-canonical, no echo,...) */
     newtio.c_lflag = 0;
 
-    newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
-
-
+    newtio.c_cc[VTIME] = 1; /* inter-character timer unused */
+    newtio.c_cc[VMIN] = 0;  /* blocking read until 5 chars received */
 
     /*
     VTIME e VMIN devem ser alterados de forma a proteger com um temporizador a
     leitura do(s) próximo(s) caracter(es)
     */
 
-
     tcflush(fd, TCIOFLUSH);
-    
 
-    if (tcsetattr(fd,TCSANOW,&newtio) == -1) {
+    if (tcsetattr(fd, TCSANOW, &newtio) == -1) {
         perror("tcsetattr");
         exit(-1);
     }
 
     printf("New termios structure set\n");
 
-
-
-   /*for (i = 0; i < 255; i++) {
-        buf = gets();
-    }*/
-
-
-    //gets(str);
-    //strcpy(buf,str);
-    
-    char buf[]= {0x5C, 0x01, 0x03, 1, 0x5C };
-    buf[3]=buf[1]^buf[2];
-    res = write(fd,buf,strlen(buf)+1);
-    alarm(3);
-
-    while (STOP==FALSE) {       /* loop for input */
-             
-        res = read(fd, buf, 1); /* returns after 5 chars have been input */
-        state_handler(buf[0]);
-        if (state == STOP_a)
-        {
-            printf("UA state achieved!\n");
-            alarm(0);
-            break;
+    char buf[] = SET_1;
+    alarm_count = 0;
+    alarm_flag = false;
+    while (alarm_count < 3) {
+        alarm_flag = false;
+        alarm(3);
+        write(fd, buf, strlen(buf) + 1);
+        while (true) {
+            read(fd, &str, sizeof(str));
+            state_handler(str);
+            if (alarm_flag)
+                break;
+            if (state == STOP_a) {
+                printf("UA state achieved!\n");
+                alarm(0);
+                break;
+            }
         }
+        if (state == STOP_a)
+            break;
+        printf("timeout in %d\n", alarm_count);
     }
-    alarm(0);
+
     sleep(1);
 
-    if ( tcsetattr(fd,TCSANOW,&oldtio) == -1) {
+    if (tcsetattr(fd, TCSANOW, &oldtio) == -1) {
         perror("tcsetattr");
         exit(-1);
     }
