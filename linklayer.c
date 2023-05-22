@@ -31,6 +31,7 @@
 //#define C_RR_1 0x21
 /*!!!!!!!!!!!!!!!!!!!!!!!! FALTA IMPLEMETAR !!!!!!!!!!!!!!!!!!*/
 
+
 #define ESC 0X5D
 #define DSC 0x0B
 #define SET_1 \
